@@ -4,11 +4,13 @@ import Search from './components/Search'
 import Form from './components/Form';
 import Numbers from './components/Numbers';
 import personsService from './services/persons';
+import Notification from "./components/Notification";
 
 const App = () => {
   const [persons, setPersons] = useState([]);
   const [newPerson, setNewPerson] = useState({ name: "", number: "" });
   const [searchString, setSearchString] = useState('');
+  const [eventMsg, setEventMsg] = useState({msg: '', type: ''});
 
   useEffect( () => {
 
@@ -31,6 +33,10 @@ const App = () => {
         .then(response => {
           setPersons(persons.concat(response));
           setNewPerson({ name: "", number: "" });
+          setEventMsg({msg: `Added ${response.name}`, type: 'success'})
+          setTimeout(() => {
+            setEventMsg({msg: '', type: ''})
+          }, 5000)
         })
     } else {
 
@@ -38,9 +44,19 @@ const App = () => {
         personsService.updateNumber({...person, number: newPerson.number})
           .then(response => {
             const index = persons.findIndex(el => el.id === response.id);
-            let newPersons = [...persons]
+            let newPersons = [...persons];
+            setEventMsg({msg: `Changed ${response.name}'s number`, type: 'success'});
+            setTimeout(() => {
+              setEventMsg({msg: '', type: ''})
+            }, 5000)
             newPersons.splice(index,1,response)
             setPersons(newPersons);
+          })
+          .catch(response => {
+            setEventMsg({msg: `${newPerson.name} has already been removed from the server`, type: 'error'})
+            setTimeout(() => {
+              setEventMsg({msg: '', type: ''})
+            }, 5000)
           })
       }
     }
@@ -65,6 +81,9 @@ const App = () => {
         .then(response => {
           setPersons(persons.filter(person => person.id !== id));
         })
+        .catch(response => {
+          console.log(response)
+        })
     }
   }
 
@@ -73,6 +92,7 @@ const App = () => {
   return (
     <div>
       <h2>Phonebook</h2>
+      <Notification notification={eventMsg} />
       <Search onChange={handleSearchChange} searchString={searchString} /> 
       <Form handleInputChange={handleInputChange} handleSubmit={handleSubmit} newPerson={newPerson}/>
       <Numbers filteredList={filteredList} handleClick={deletePerson}/>
